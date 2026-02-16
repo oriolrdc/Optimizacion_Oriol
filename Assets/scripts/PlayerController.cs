@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : MonoBehaviour, IDamageable
 {
     private InputAction _shootLAction;
     private InputAction _shootRAction;
@@ -13,8 +14,7 @@ public class PlayerController : MonoBehaviour
     private Vector2 _moveInput;
     private Rigidbody _rb;
     [SerializeField] float _movementSpeed = 5f;
-
-
+    [SerializeField] float _health = 20;
 
     void Awake()
     {
@@ -35,7 +35,7 @@ public class PlayerController : MonoBehaviour
 
         if(_shootRAction.WasPressedThisFrame())
         {
-            ShootRight();
+            StartCoroutine(ShootRight());
         }
 
         Movement();
@@ -43,7 +43,8 @@ public class PlayerController : MonoBehaviour
 
     void Movement()
     {
-        _rb.linearVelocity = _moveInput * _movementSpeed;
+        Vector3 direction = new Vector3(_moveInput.x, 0, _moveInput.y);
+        _rb.linearVelocity = direction.normalized * _movementSpeed;
     }
 
     void ShootLeft()
@@ -54,11 +55,23 @@ public class PlayerController : MonoBehaviour
         bullet.SetActive(true); //necesitas activarlo pq la funcion de pooling instance lo unico que hace es llevarlo a la posicion, por eso necesitas activarlo despues.
     }
 
-    void ShootRight()
+    IEnumerator ShootRight()
     {
         //Instantiate(_bulletPrefab, _gunPosition.position, _gunPosition.rotation); //instantiate cutre que crea morralla
 
         GameObject bullet = PoolManager.Instance.GetPooledObject("balas", _rightGunPosition.position, _rightGunPosition.rotation);
         bullet.SetActive(true); //necesitas activarlo pq la funcion de pooling instance lo unico que hace es llevarlo a la posicion, por eso necesitas activarlo despues.
+        yield return new WaitForSeconds(1);
     }
+
+    public void TakeDamage(float damage)
+    {
+        _health -= damage;
+
+        if(_health <= 0)
+        {
+            Destroy(gameObject);
+        }
+    }
+    
 }
